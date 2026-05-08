@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../../firebase/config'; // Pastikan path ini sesuai
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+
+// 1. IMPORT FUNGSI CUSTOM DARI auth.js
+// Pastikan path ini mengarah ke file auth.js Anda dengan benar!
+import { loginWithEmail, loginWithGoogle } from '../../firebase/auth';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -11,15 +13,22 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Fungsi Login dengan Email & Password
+  // Fungsi Login dengan Email & Password (Menggunakan auth.js)
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate('/admin'); // Arahkan ke dashboard admin jika sukses
+      // Panggil fungsi loginWithEmail yang sudah mengecek status Admin
+      const result = await loginWithEmail(email, password);
+
+      // Arahkan berdasarkan role
+      if (result.isAdmin) {
+        navigate('/admin'); // Jika admin (Anda atau Yuan), masuk ke Dashboard Admin
+      } else {
+        navigate('/'); // Jika user biasa, kembalikan ke Landing Page
+      }
     } catch (err) {
       console.error(err);
       setError('Email atau password salah. Silakan coba lagi.');
@@ -28,14 +37,20 @@ const Login = () => {
     }
   };
 
-  // Fungsi Login dengan Google
+  // Fungsi Login dengan Google (Menggunakan auth.js)
   const handleGoogleLogin = async () => {
     setError('');
-    const provider = new GoogleAuthProvider();
 
     try {
-      await signInWithPopup(auth, provider);
-      navigate('/admin'); // Arahkan ke dashboard admin
+      // Panggil fungsi loginWithGoogle yang sudah mengecek status Admin
+      const result = await loginWithGoogle();
+
+      // Arahkan berdasarkan role
+      if (result.isAdmin) {
+        navigate('/admin'); // Jika admin (Anda atau Yuan), masuk ke Dashboard Admin
+      } else {
+        navigate('/'); // Jika user biasa, kembalikan ke Landing Page
+      }
     } catch (err) {
       console.error(err);
       setError('Gagal login dengan Google.');

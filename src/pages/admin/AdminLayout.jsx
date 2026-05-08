@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../firebase/config';
 import {
     Bars3Icon,
@@ -16,6 +16,41 @@ const AdminLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const location = useLocation();
     const navigate = useNavigate();
+
+    const [adminProfile, setAdminProfile] = useState({
+        name: 'Loading...',
+        initials: '...',
+        photo: null // State untuk foto
+    });
+
+    // MENDETEKSI SIAPA YANG LOGIN
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                let name = '';
+                let initials = '';
+
+                if (user.email === 'vjivandro77@gmail.com') {
+                    name = 'Juris Vassa Ivandro';
+                    initials = 'JV';
+                } else if (user.email === 'yuan.hanky@gmail.com') {
+                    name = 'Yuan Hanky';
+                    initials = 'YH';
+                } else {
+                    name = user.displayName || user.email.split('@')[0];
+                    initials = name.substring(0, 2).toUpperCase();
+                }
+
+                // Cukup panggil setAdminProfile SATU KALI di sini
+                setAdminProfile({
+                    name: name,
+                    initials: initials,
+                    photo: user.photoURL
+                });
+            }
+        });
+        return () => unsubscribe();
+    }, []);
 
     const menuItems = [
         { name: 'Dashboard', path: '/admin', icon: Squares2X2Icon },
@@ -80,13 +115,30 @@ const AdminLayout = () => {
                         </button>
                         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Panel Management</h2>
                     </div>
+
+                    {/* PROFIL ADMIN DINAMIS & FOTO */}
                     <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
                         <div className="text-right hidden sm:block">
-                            <p className="text-xs font-bold text-slate-900 leading-none">Juris Vassa</p>
-                            <p className="text-[10px] text-slate-400 mt-1 uppercase">Super Admin</p>
+                            <p className="text-xs font-bold text-slate-900 leading-none">{adminProfile.name}</p>
+                            <p className="text-[10px] text-slate-400 mt-1 uppercase">Admin</p>
                         </div>
-                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-md">JV</div>
+
+                        {/* BAGIAN INI YANG DIUBAH AGAR BISA NAMPILIN FOTO */}
+                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-md overflow-hidden border-2 border-white">
+                            {adminProfile.photo ? (
+                                <img
+                                    src={adminProfile.photo}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                />
+                            ) : (
+                                <span>{adminProfile.initials}</span>
+                            )}
+                        </div>
+
                     </div>
+
                 </header>
 
                 <main className="p-8">
